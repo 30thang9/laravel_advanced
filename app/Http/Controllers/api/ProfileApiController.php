@@ -8,6 +8,32 @@ use Illuminate\Http\Request;
 
 class ProfileApiController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/api/profile/{id}",
+     *     summary="Get user profile by ID",
+     *     description="Retrieve user profile details by ID",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="User ID",
+     *         @OA\Schema(
+     *             type="integer"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Successful operation"
+     *     ),
+     *     @OA\Response(
+     *         response="404",
+     *         description="User not found"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
     public function getProfile($id)
     {
         $profile = User::find($id);
@@ -40,7 +66,7 @@ class ProfileApiController extends Controller
                 ], 404);
         }
         try {
-            $profile->update($request->only('name'));
+            $profile->update($request->only('name','date_of_birth'));
 
             return response()->json(
                 [
