@@ -27,6 +27,7 @@ Route::post('/logout', [AuthApiController::class, 'logout']);
 Route::post('/forgot-password', [AuthApiController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthApiController::class, 'resetPassword']);
 Route::post('/verify-email/{id}', [AuthApiController::class, 'verifyEmail']);
+Route::post('/refresh-token/{token}', [AuthApiController::class, 'refreshToken']);
 
 // User Profile
 Route::middleware('auth:sanctum')->group(function () {

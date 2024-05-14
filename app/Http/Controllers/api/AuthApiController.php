@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Enums\TokenAbility;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -72,7 +75,7 @@ class AuthApiController extends Controller
 
             $isCreated = $user->wasRecentlyCreated;
             $message = $isCreated ? 'User created successfully' : 'User already exists';
-            if($isCreated) {$user->sendEmailVerificationNotification();}
+            if($isCreated) {event(new Registered($user));}
             return $this->handleResponse($isCreated,$message,$isCreated ? 201 : 422);
 
         } catch (\Exception $e) {
@@ -217,6 +220,32 @@ class AuthApiController extends Controller
         }
     }
 
+
+    public function refreshToken(Request $request)
+    {
+        try {
+            $request->validate([
+                'refresh_token' => 'required',
+            ]);
+
+            $user = Auth::user();
+            $newAccessToken = $user->createToken(
+                'access_token',
+                [TokenAbility::ACCESS_API->value],
+                Carbon::now()->addMinutes(config('sanctum.expiration'))
+            );
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Refresh token successfully!',
+                'access_token' => $newAccessToken,
+            ]);
+        }
+        catch (\Exception $e){
+            return $this->handleResponse(false, $e->getMessage(), 500);
+        }
+    }
+
     private function handleResponse($status, $message, $statusCode)
     {
         return response()->json([
@@ -227,16 +256,19 @@ class AuthApiController extends Controller
 
     private function handleResponseLogin($user)
     {
-        $token = $user->createToken('API TOKEN')->plainTextToken;
+        $accessToken = $user->createToken('access_token', [TokenAbility::ACCESS_API->value], Carbon::now()->addMinutes(config('sanctum.expiration')));
+        $refreshToken = $user->createToken('refresh_token', [TokenAbility::ISSUE_ACCESS_TOKEN->value], Carbon::now()->addMinutes(config('sanctum.rt_expiration')));
         return response()->json([
             'status' => true,
             'message' => 'User login successfully',
             'data' => [
                 'user' => $user->only(['id', 'name', 'email']),
-                'token' => $token
+                'token' => $accessToken->plainTextToken,
+                'refresh_token' => $refreshToken->plainTextToken,
             ]
         ], 200);
     }
+
 
 //    protected function sendEmailVerificationNotification($user)
 //    {

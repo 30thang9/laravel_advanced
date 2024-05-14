@@ -66,7 +66,10 @@ class ProfileApiController extends Controller
                 ], 404);
         }
         try {
-            $profile->update($request->only('name','date_of_birth'));
+            $profile->update([
+                'name' => $request->name,
+                'date_of_birth' => $request->date_of_birth
+            ]);
 
             return response()->json(
                 [
